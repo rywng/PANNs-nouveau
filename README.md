@@ -1,27 +1,38 @@
 # PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition
 
-This repo contains code for our paper: **PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition** [1]. A variety of CNNs are trained on the large-scale AudioSet dataset [2] containing 5000 hours audio with 527 sound classes. A mean average precision (mAP) of 0.439 is achieved using our proposed Wavegram-Logmel-CNN system, outperforming the Google baseline of 0.317 [3]. The PANNs have been used for audio tagging and sound event detection. The PANNs have been used to fine-tune several audio pattern recoginition tasks, and have outperformed several state-of-the-art systems. 
+This is a fork of PANNs, main differences are shown below:
+
+- Code quality
+  - Use relative imports instead of `sys.path.insert` (this is why python sucks)
+  - Use a directory structure that makes sense. Instead of one flat directory with everything inside, or even worse, two flat directories with interlinked dependency (WIP)
+  - Redundant features removed
+    - The whole hdf5 thing is removed, it doesn't make any sense when you can simply load waveforms from csvs. This complicates everything for devs and users.
+    - No "black list csv" thing, you don't need it.
+- Latest dependency, python 3.11, so it's fast and works everywhere
+
+This repo contains code for our paper: **PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition** [1]. A variety of CNNs are trained on the large-scale AudioSet dataset [2] containing 5000 hours audio with 527 sound classes. A mean average precision (mAP) of 0.439 is achieved using our proposed Wavegram-Logmel-CNN system, outperforming the Google baseline of 0.317 [3]. The PANNs have been used for audio tagging and sound event detection. The PANNs have been used to fine-tune several audio pattern recoginition tasks, and have outperformed several state-of-the-art systems.
 
 ## Environments
+
 The codebase is developed with Python 3.7. Install requirements as follows:
+
 ```
 pip install -r requirements.txt
 ```
 
 ## Audio tagging using pretrained models
+
 Users can inference the tags of an audio recording using pretrained models without training. Details can be viewed at [scripts/0_inference.sh](scripts/0_inference.sh) First, downloaded one pretrained model from https://zenodo.org/record/3987831, for example, the model named "Cnn14_mAP=0.431.pth". Then, execute the following commands to inference this [audio](resources/R9_ZSCveAHg_7s.wav):
+
 ```
 CHECKPOINT_PATH="Cnn14_mAP=0.431.pth"
 wget -O $CHECKPOINT_PATH https://zenodo.org/record/3987831/files/Cnn14_mAP%3D0.431.pth?download=1
 MODEL_TYPE="Cnn14"
-CUDA_VISIBLE_DEVICES=0 python3 pytorch/inference.py audio_tagging \
-    --model_type=$MODEL_TYPE \
-    --checkpoint_path=$CHECKPOINT_PATH \
-    --audio_path="resources/R9_ZSCveAHg_7s.wav" \
-    --cuda
+python -m pytorch.inference audio_tagging --model_type=$MODEL_TYPE --checkpoint_path=$CHECKPOINT_PATH --audio_path="./resources/R9_ZSCveAHg_7s.wav" --cuda
 ```
 
 Then the result will be printed on the screen looks like:
+
 ```
 Speech: 0.893
 Telephone bell ringing: 0.754
@@ -37,6 +48,7 @@ embedding: (2048,)
 ```
 
 If users would like to use 16 kHz model for inference, just do:
+
 ```
 CHECKPOINT_PATH="Cnn14_16k_mAP=0.438.pth"   # Trained by a later code version, achieves higher mAP than the paper.
 wget -O $CHECKPOINT_PATH https://zenodo.org/record/3987831/files/Cnn14_16k_mAP%3D0.438.pth?download=1
@@ -55,6 +67,7 @@ CUDA_VISIBLE_DEVICES=0 python3 pytorch/inference.py audio_tagging \
 ```
 
 ## Sound event detection using pretrained models
+
 Some of PANNs such as DecisionLevelMax (the best), DecisionLevelAvg, DecisionLevelAtt) can be used for frame-wise sound event detection. For example, execute the following commands to inference sound event detection results on this [audio](resources/R9_ZSCveAHg_7s.wav):
 
 ```
@@ -74,6 +87,7 @@ The visualization of sound event detection result looks like:
 Please see https://www.youtube.com/watch?v=QyFNIhRxFrY for a sound event detection demo.
 
 For those users who only want to use the pretrained models for inference, we have prepared a **panns_inference** tool which can be easily installed by:
+
 ```
 pip install panns_inference
 ```
@@ -81,14 +95,17 @@ pip install panns_inference
 Please visit https://github.com/qiuqiangkong/panns_inference for details of panns_inference.
 
 ## Train PANNs from scratch
+
 Users can train PANNs from scratch as follows.
 
 ## 1. Download dataset
-The [scripts/1_download_dataset.sh](scripts/1_download_dataset.sh) script is used for downloading all audio and metadata from the internet. The total size of AudioSet is around 1.1 TB. Notice there can be missing files on YouTube, so the numebr of files downloaded by users can be different from time to time. Our downloaded version contains 20550 / 22160 of the balaned training subset, 1913637 / 2041789 of the unbalanced training subset, and 18887 / 20371 of the evaluation subset. 
+
+The [scripts/1_download_dataset.sh](scripts/1_download_dataset.sh) script is used for downloading all audio and metadata from the internet. The total size of AudioSet is around 1.1 TB. Notice there can be missing files on YouTube, so the numebr of files downloaded by users can be different from time to time. Our downloaded version contains 20550 / 22160 of the balaned training subset, 1913637 / 2041789 of the unbalanced training subset, and 18887 / 20371 of the evaluation subset.
 
 For reproducibility, our downloaded dataset can be accessed at: link: [https://pan.baidu.com/s/13WnzI1XDSvqXZQTS-Kqujg](https://pan.baidu.com/s/13WnzI1XDSvqXZQTS-Kqujg), password: 0vc2
 
 The downloaded data looks like:
+
 <pre>
 
 dataset_root
@@ -112,6 +129,7 @@ dataset_root
 </pre>
 
 ## 2. Pack waveforms into hdf5 files
+
 The [scripts/2_pack_waveforms_to_hdf5s.sh](scripts/2_pack_waveforms_to_hdf5s.sh) script is used for packing all raw waveforms into 43 large hdf5 files for speed up training: one for balanced training subset, one for evaluation subset and 41 for unbalanced traning subset. The packed files looks like:
 
 <pre>
@@ -133,11 +151,12 @@ workspace
               └── unbalanced_train_part40.h5
 </pre>
 
-
 ## 3. Create training indexes
+
 The [scripts/3_create_training_indexes.sh](scripts/3_create_training_indexes.sh) is used for creating training indexes. Those indexes are used for sampling mini-batches.
 
 ## 4. Train
+
 The [scripts/4_train.sh](scripts/4_train.sh) script contains training, saving checkpoints, and evaluation.
 
 ```
@@ -162,7 +181,8 @@ CUDA_VISIBLE_DEVICES=0 python3 pytorch/main.py train \
 ```
 
 ## Results
-The CNN models are trained on a single card Tesla-V100-PCIE-32GB. (The training also works on a GPU card with 12 GB). The training takes around 3 - 7 days. 
+
+The CNN models are trained on a single card Tesla-V100-PCIE-32GB. (The training also works on a GPU card with 12 GB). The training takes around 3 - 7 days.
 
 ```
 Validate bal mAP: 0.005
@@ -196,7 +216,9 @@ Results of PANNs on AudioSet tagging. Dash and solid lines are training mAP and 
 Top rows show the previously proposed methods using embedding features provided by Google. Previous best system achieved an mAP of 0.369 using large feature-attention neural networks. We propose to train neural networks directly from audio recordings. Our CNN14 achieves an mAP of 0.431, and Wavegram-Logmel-CNN achieves an mAP of 0.439.
 
 ## Plot figures of [1]
+
 To reproduce all figures of [1], just do:
+
 ```
 wget -O paper_statistics.zip https://zenodo.org/record/3987831/files/paper_statistics.zip?download=1
 unzip paper_statistics.zip
@@ -207,6 +229,7 @@ python3 utils/plot_for_paper.py plot_long_fig
 ```
 
 ## Fine-tune on new tasks
+
 After downloading the pretrained models. Build fine-tuned systems for new tasks is simple!
 
 ```
@@ -227,21 +250,26 @@ CUDA_VISIBLE_DEVICES=0 python3 pytorch/finetune_template.py train \
 Here is an example of fine-tuning PANNs to GTZAN music classification: https://github.com/qiuqiangkong/panns_transfer_to_gtzan
 
 ## Demos
+
 We apply the audio tagging system to build a sound event detection (SED) system. The SED prediction is obtained by applying the audio tagging system on consecutive 2-second segments. The video of demo can be viewed at: <br>
 https://www.youtube.com/watch?v=7TEtDMzdLeY
 
 ## FAQs
+
 If users came across out of memory error, then try to reduce the batch size.
 
 ## Cite
+
 [1] Qiuqiang Kong, Yin Cao, Turab Iqbal, Yuxuan Wang, Wenwu Wang, and Mark D. Plumbley. "Panns: Large-scale pretrained audio neural networks for audio pattern recognition." IEEE/ACM Transactions on Audio, Speech, and Language Processing 28 (2020): 2880-2894.
 
 ## Reference
+
 [2] Gemmeke, J.F., Ellis, D.P., Freedman, D., Jansen, A., Lawrence, W., Moore, R.C., Plakal, M. and Ritter, M., 2017, March. Audio set: An ontology and human-labeled dataset for audio events. In IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pp. 776-780, 2017
 
 [3] Hershey, S., Chaudhuri, S., Ellis, D.P., Gemmeke, J.F., Jansen, A., Moore, R.C., Plakal, M., Platt, D., Saurous, R.A., Seybold, B. and Slaney, M., 2017, March. CNN architectures for large-scale audio classification. In 2017 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pp. 131-135, 2017
 
 ## External links
+
 Other work on music transfer learning includes: <br>
 https://github.com/jordipons/sklearn-audio-transfer-learning <br>
 https://github.com/keunwoochoi/transfer_learning_music

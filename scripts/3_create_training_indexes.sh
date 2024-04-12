@@ -1,5 +1,5 @@
 #!/bin/bash
-WORKSPACE=${1:-"./workspaces/audioset_tagging"}   # Default argument.
+WORKSPACE=${1:-"../workspaces/audioset_tagging"}   # Default argument.
 
 # evaluation indexes
 python3 utils/create_indexes.py create_indexes \

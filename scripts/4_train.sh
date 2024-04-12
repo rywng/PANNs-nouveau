@@ -1,5 +1,5 @@
 #!/bin/bash
-WORKSPACE=${1:-"./workspaces/audioset_tagging"}   # Default argument.
+WORKSPACE=${1:-"../workspaces/audioset_tagging"}   # Default argument.
 
 CUDA_VISIBLE_DEVICES=0 python3 pytorch/main.py train \
     --workspace=$WORKSPACE \
