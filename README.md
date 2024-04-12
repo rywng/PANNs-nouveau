@@ -14,7 +14,7 @@ This repo contains code for our paper: **PANNs: Large-Scale Pretrained Audio Neu
 
 ## Environments
 
-The codebase is developed with Python 3.7. Install requirements as follows:
+The codebase is developed with Python 3.11. Install requirements as follows:
 
 ```
 pip install -r requirements.txt

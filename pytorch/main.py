@@ -200,6 +200,7 @@ def train(
         )
 
         torch.save(checkpoint, checkpoint_path)
+        pbar.update()
         for batch_data_dict in train_loader:
             """batch_data_dict: {
                 'audio_name': (batch_size [*2 if mixup],), 
@@ -219,7 +220,6 @@ def train(
 
             # Forward
             model.train()
-            pbar.update()
 
             if "mixup" in augmentation:
                 batch_output_dict = model(

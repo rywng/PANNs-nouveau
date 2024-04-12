@@ -9,5 +9,11 @@ print(df2.describe())
 df3 = pl.read_csv("3.csv")
 print(df3.describe())
 
-conc_df = df1.slice(0, 256).vstack(df2.slice(0, 256)).vstack(df3.slice(0, 256))
-conc_df.write_csv("concat-mini.csv")
+df3 = df3.sample(fraction=1)
+
+test_size = 1024
+
+conc_df = df1.vstack(df2).vstack(df3.tail(-1 * test_size))
+conc_df.write_csv("train.csv")
+
+df3.head(test_size).write_csv("negative_test.csv")
