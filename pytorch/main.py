@@ -15,7 +15,7 @@ from utils.utilities import (
     create_logging,
     Mixup,
 )
-from pytorch.models import Cnn10
+from pytorch import models
 import tqdm
 
 from pytorch.losses import get_loss_func
@@ -132,7 +132,9 @@ def train(
     writer = SummaryWriter(log_dir=statistics_dir)
 
     # Model
-    Model = Cnn10
+    # Model = models.Cnn14
+    Model = eval(f"models.{model_type}")
+    assert model_type in str(Model.__name__), f"Wrong model type: {model_type} and {str(Model.__name__)}"
     model = Model(
         sample_rate=sample_rate,
         window_size=window_size,
@@ -175,9 +177,6 @@ def train(
         weight_decay=0.0,
         amsgrad=True,
     )
-
-    # Resume training
-    epoch = 0
 
     # Parallel
     print("Number of GPU available: {}".format(torch.cuda.device_count()))
