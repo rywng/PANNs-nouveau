@@ -203,15 +203,15 @@ class Cnn14(nn.Module):
 
         self.bn0 = nn.BatchNorm2d(64)
 
-        self.conv_block1 = ConvBlock(in_channels=1, out_channels=64)
-        self.conv_block2 = ConvBlock(in_channels=64, out_channels=128)
-        self.conv_block3 = ConvBlock(in_channels=128, out_channels=256)
-        self.conv_block4 = ConvBlock(in_channels=256, out_channels=512)
-        self.conv_block5 = ConvBlock(in_channels=512, out_channels=1024)
-        self.conv_block6 = ConvBlock(in_channels=1024, out_channels=2048)
+        self.conv_block1 = ConvBlock(in_channels=1, out_channels=8)
+        self.conv_block2 = ConvBlock(in_channels=8, out_channels=16)
+        self.conv_block3 = ConvBlock(in_channels=16, out_channels=32)
+        self.conv_block4 = ConvBlock(in_channels=32, out_channels=64)
+        self.conv_block5 = ConvBlock(in_channels=64, out_channels=128)
+        self.conv_block6 = ConvBlock(in_channels=128, out_channels=256)
 
-        self.fc1 = nn.Linear(2048, 2048, bias=True)
-        self.fc_audioset = nn.Linear(2048, classes_num, bias=True)
+        self.fc1 = nn.Linear(256, 256, bias=True)
+        self.fc_audioset = nn.Linear(256, classes_num, bias=True)
 
         self.init_weight()
 
@@ -258,7 +258,7 @@ class Cnn14(nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu_(self.fc1(x))
         embedding = F.dropout(x, p=0.5, training=self.training)
-        clipwise_output = torch.sigmoid(self.fc_audioset(x))
+        clipwise_output = torch.softmax(self.fc_audioset(x), dim=1)
 
         output_dict = {"clipwise_output": clipwise_output, "embedding": embedding}
 
@@ -513,13 +513,13 @@ class Cnn6(nn.Module):
 
         self.bn0 = nn.BatchNorm2d(64)
 
-        self.conv_block1 = ConvBlock5x5(in_channels=1, out_channels=64)
-        self.conv_block2 = ConvBlock5x5(in_channels=64, out_channels=128)
-        self.conv_block3 = ConvBlock5x5(in_channels=128, out_channels=256)
-        self.conv_block4 = ConvBlock5x5(in_channels=256, out_channels=512)
+        self.conv_block1 = ConvBlock5x5(in_channels=1, out_channels=32)
+        self.conv_block2 = ConvBlock5x5(in_channels=32, out_channels=64)
+        self.conv_block3 = ConvBlock5x5(in_channels=64, out_channels=128)
+        self.conv_block4 = ConvBlock5x5(in_channels=128, out_channels=256)
 
-        self.fc1 = nn.Linear(512, 512, bias=True)
-        self.fc_audioset = nn.Linear(512, classes_num, bias=True)
+        self.fc1 = nn.Linear(256, 256, bias=True)
+        self.fc_audioset = nn.Linear(256, classes_num, bias=True)
 
         self.init_weight()
 
@@ -562,7 +562,7 @@ class Cnn6(nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu_(self.fc1(x))
         embedding = F.dropout(x, p=0.5, training=self.training)
-        clipwise_output = torch.sigmoid(self.fc_audioset(x))
+        clipwise_output = torch.softmax(self.fc_audioset(x), dim=1)
 
         output_dict = {"clipwise_output": clipwise_output, "embedding": embedding}
 
@@ -616,13 +616,13 @@ class Cnn10(nn.Module):
 
         self.bn0 = nn.BatchNorm2d(64)
 
-        self.conv_block1 = ConvBlock(in_channels=1, out_channels=64)
-        self.conv_block2 = ConvBlock(in_channels=64, out_channels=128)
-        self.conv_block3 = ConvBlock(in_channels=128, out_channels=256)
-        self.conv_block4 = ConvBlock(in_channels=256, out_channels=512)
+        self.conv_block1 = ConvBlock(in_channels=1, out_channels=32)
+        self.conv_block2 = ConvBlock(in_channels=32, out_channels=64)
+        self.conv_block3 = ConvBlock(in_channels=64, out_channels=128)
+        self.conv_block4 = ConvBlock(in_channels=128, out_channels=256)
 
-        self.fc1 = nn.Linear(512, 512, bias=True)
-        self.fc_audioset = nn.Linear(512, classes_num, bias=True)
+        self.fc1 = nn.Linear(256, 128, bias=True)
+        self.fc_audioset = nn.Linear(128, classes_num, bias=True)
 
         self.init_weight()
 
@@ -665,7 +665,7 @@ class Cnn10(nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu_(self.fc1(x))
         embedding = F.dropout(x, p=0.5, training=self.training)
-        clipwise_output = torch.sigmoid(self.fc_audioset(x))
+        clipwise_output = torch.softmax(self.fc_audioset(x), dim=1)
 
         output_dict = {"clipwise_output": clipwise_output, "embedding": embedding}
 
