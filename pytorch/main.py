@@ -189,16 +189,6 @@ def train(
     iteration = 0
 
     for epoch in range(early_stop):
-        checkpoint = {
-            "iteration": epoch,
-            "model": model.module.state_dict(),
-        }
-
-        checkpoint_path = os.path.join(
-            checkpoints_dir, "{}_iterations.pth".format(epoch)
-        )
-
-        torch.save(checkpoint, checkpoint_path)
         pbar.update()
         for batch_data_dict in train_loader:
             """batch_data_dict: {
@@ -212,6 +202,9 @@ def train(
                 batch_data_dict["mixup_lambda"] = mixup_augmenter.get_lambda(
                     batch_size=len(batch_data_dict["waveform"])
                 )
+
+            if iteration % 100 == 0:
+                save_checkpoint(epoch, model, checkpoints_dir)
 
             # Move data to device
             for key in batch_data_dict.keys():
@@ -255,6 +248,18 @@ def train(
 
     writer.flush()
     pbar.close()
+
+def save_checkpoint(epoch, model, checkpoints_dir):
+    checkpoint = {
+        "iteration": epoch,
+        "model": model.module.state_dict(),
+    }
+
+    checkpoint_path = os.path.join(
+        checkpoints_dir, "{}_iterations.pth".format(epoch)
+    )
+
+    torch.save(checkpoint, checkpoint_path)
 
 
 if __name__ == "__main__":
