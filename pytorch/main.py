@@ -9,7 +9,7 @@ from pytorch.pytorch_utils import move_data_to_device, count_parameters, do_mixu
 from utils import config
 from utils.data_generator import AudioSetDatasetCsv, collate_fn, CsvTrainSampler
 from utils.utilities import (create_folder, get_filename, create_logging, Mixup, 
-    StatisticsContainer)
+    )
 from pytorch.models import Cnn10
 
 from pytorch.losses import get_loss_func
@@ -90,7 +90,7 @@ def train(args):
     logging.info(args)
     
     # Model
-    Model = eval(model_type)
+    Model = Cnn10
     model = Model(sample_rate=sample_rate, window_size=window_size, 
         hop_size=hop_size, mel_bins=mel_bins, fmin=fmin, fmax=fmax, 
         classes_num=classes_num)
@@ -105,42 +105,20 @@ def train(args):
     dataset = AudioSetDatasetCsv(classes_num, sample_rate=sample_rate)
 
     train_sampler = CsvTrainSampler(train_csv_path, batch_size)
-    
-    # Evaluate sampler
-    # eval_bal_sampler = EvaluateSampler(
-    #     indexes_hdf5_path=eval_bal_indexes_hdf5_path, batch_size=batch_size)
-    #
-    # eval_test_sampler = EvaluateSampler(
-    #     indexes_hdf5_path=eval_test_indexes_hdf5_path, batch_size=batch_size)
 
     # Data loader
     train_loader = torch.utils.data.DataLoader(dataset=dataset, 
         batch_sampler=train_sampler, collate_fn=collate_fn, 
         num_workers=num_workers, pin_memory=True)
     
-    # eval_bal_loader = torch.utils.data.DataLoader(dataset=dataset, 
-    #     batch_sampler=eval_bal_sampler, collate_fn=collate_fn, 
-    #     num_workers=num_workers, pin_memory=True)
-    #
-    # eval_test_loader = torch.utils.data.DataLoader(dataset=dataset, 
-    #     batch_sampler=eval_test_sampler, collate_fn=collate_fn, 
-    #     num_workers=num_workers, pin_memory=True)
 
     if 'mixup' in augmentation:
         mixup_augmenter = Mixup(mixup_alpha=1.)
 
-    # Evaluator
-    # evaluator = Evaluator(model=model)
-        
-    # Statistics
-    statistics_container = StatisticsContainer(statistics_path)
-    
     # Optimizer
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, 
         betas=(0.9, 0.999), eps=1e-08, weight_decay=0., amsgrad=True)
 
-    train_bgn_time = time.time()
-    
     # Resume training
     iteration = 0
     
@@ -160,38 +138,8 @@ def train(args):
             'target': (batch_size [*2 if mixup], classes_num), 
             (ifexist) 'mixup_lambda': (batch_size * 2,)}
         """
-        # print(iteration)
-        
-        # Evaluate
-        # if (iteration % 2000 == 0 and iteration > resume_iteration) or (iteration == 0):
-        #     train_fin_time = time.time()
-        #
-        #     bal_statistics = evaluator.evaluate(eval_bal_loader)
-        #     test_statistics = evaluator.evaluate(eval_test_loader)
-        #                     
-        #     logging.info('Validate bal mAP: {:.3f}'.format(
-        #         np.mean(bal_statistics['average_precision'])))
-        #
-        #     logging.info('Validate test mAP: {:.3f}'.format(
-        #         np.mean(test_statistics['average_precision'])))
-        #
-        #     statistics_container.append(iteration, bal_statistics, data_type='bal')
-        #     statistics_container.append(iteration, test_statistics, data_type='test')
-        #     statistics_container.dump()
-        #
-        #     train_time = train_fin_time - train_bgn_time
-        #     validate_time = time.time() - train_fin_time
-        #
-        #     logging.info(
-        #         'iteration: {}, train time: {:.3f} s, validate time: {:.3f} s'
-        #             ''.format(iteration, train_time, validate_time))
-        #
-        #     logging.info('------------------------------------')
-        #
-        #     train_bgn_time = time.time()
-        
         # Save model
-        if iteration % 100000 == 0:
+        if iteration % 100 == 0:
             checkpoint = {
                 'iteration': iteration, 
                 'model': model.module.state_dict(), 
@@ -260,7 +208,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--workspace', type=str, required=True)
     parser.add_argument('--data_type', type=str, default='full_train', choices=['balanced_train', 'full_train'])
-    parser.add_argument('--sample_rate', type=int, default=32000)
+    parser.add_argument('--sample_rate', type=int, default=16000)
     parser.add_argument('--window_size', type=int, default=1024)
     parser.add_argument('--hop_size', type=int, default=320)
     parser.add_argument('--mel_bins', type=int, default=64)
