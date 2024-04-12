@@ -1,3 +1,8 @@
+"""Generate datasets
+
+TODO: remove hdf5 functionality
+"""
+
 import numpy as np
 import argparse
 import csv

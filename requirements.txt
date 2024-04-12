@@ -1,6 +1,8 @@
+h5py
 librosa
 matplotlib
 pandas
 soundfile
 torch
 torchlibrosa
+polars
