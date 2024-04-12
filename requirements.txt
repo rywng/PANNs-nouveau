@@ -1,8 +1,9 @@
-h5py
 librosa
 matplotlib
 pandas
+polars
 soundfile
+tensorboard
 torch
 torchlibrosa
-polars
+tqdm

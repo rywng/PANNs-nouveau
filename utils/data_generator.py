@@ -4,9 +4,10 @@ import os
 import librosa
 import numpy as np
 import polars as pl
+from torch.utils.data import Dataset
 
 
-class AudioSetDatasetCsv(object):
+class AudioSetDatasetCsv(Dataset):
     def __init__(self, classes_num, sample_rate=32000, audio_len_sec=10):
         """This class takes path of audio as input, and return
         the waveform and target of the audio clip. This class is used by DataLoader.
