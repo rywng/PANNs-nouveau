@@ -1,4 +1,5 @@
 import logging
+import random
 import os
 
 import librosa
@@ -16,14 +17,15 @@ class AudioSetDatasetCsv(Dataset):
         self.audio_len_sec = audio_len_sec
         self.classes_num = classes_num
 
-    def pad_or_cut(self, input: np.ndarray):
+    def pad_or_sample(self, input: np.ndarray):
         target_frame_len = self.sample_rate * self.audio_len_sec
         if input.shape[0] < target_frame_len:
             return np.concatenate(
                 (input, np.zeros(target_frame_len - input.shape[0])), axis=0
             )
         else:
-            return input[:target_frame_len]
+            start_pos = random.randint(0, len(input) - target_frame_len)
+            return input[start_pos:start_pos + target_frame_len]
 
     def one_hot_encode(self, input, start=1) -> np.ndarray:
         res = []
@@ -53,7 +55,7 @@ class AudioSetDatasetCsv(Dataset):
             sample_rate == self.sample_rate
         ), f"Loaded waveform sample rate {sample_rate} differs from target rate {self.sample_rate}"
 
-        waveform = self.pad_or_cut(waveform)
+        waveform = self.pad_or_sample(waveform)
 
         data_dict = {
             "audio_name": audio_name,

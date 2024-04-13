@@ -5,14 +5,13 @@ import os
 
 import torch.optim as optim
 import torch.utils.data
-from pytorch.pytorch_utils import move_data_to_device, count_parameters, do_mixup
+from pytorch.pytorch_utils import move_data_to_device, count_parameters
 from utils import config
 from utils.data_generator import AudioSetDatasetCsv, collate_fn, CsvTrainSampler
 from utils.utilities import (
     create_folder,
     get_filename,
     create_logging,
-    Mixup,
 )
 from pytorch import models  # noqa: F401
 import tqdm
@@ -34,7 +33,6 @@ def train(
     model_type: str,
     loss_type: str,
     balanced: bool,
-    augmentation: str,
     batch_size: int,
     learning_rate: float,
     resume_iteration: int,
@@ -43,6 +41,7 @@ def train(
     train_csv_path: str,
     classes_num: int,
     filename: str,
+    audio_len_sec: int,
 ):
     """Train AudioSet tagging model.
 
@@ -56,7 +55,6 @@ def train(
       model_type: str
       loss_type: 'clip_bce'
       balanced: 'none' | 'balanced' | 'alternate'
-      augmentation: 'none' | 'mixup'
       batch_size: int
       learning_rate: float
       resume_iteration: int
@@ -86,7 +84,6 @@ def train(
         model_type,
         "loss_type={}".format(loss_type),
         "balanced={}".format(balanced),
-        "augmentation={}".format(augmentation),
         "batch_size={}".format(batch_size),
         current_time,
     )
@@ -124,7 +121,9 @@ def train(
 
     # Dataset will be used by DataLoader later. Dataset takes a meta as input
     # and return a waveform and a target.
-    dataset = AudioSetDatasetCsv(classes_num, sample_rate=sample_rate)
+    dataset = AudioSetDatasetCsv(
+        classes_num, sample_rate=sample_rate, audio_len_sec=audio_len_sec
+    )
 
     train_sampler = CsvTrainSampler(train_csv_path, batch_size)
 
@@ -136,9 +135,6 @@ def train(
         num_workers=num_workers,
         pin_memory=True,
     )
-
-    if "mixup" in augmentation:
-        mixup_augmenter = Mixup(mixup_alpha=1.0)
 
     # Optimizer
     optimizer = optim.Adam(
@@ -164,17 +160,10 @@ def train(
         pbar.update()
         for batch_data_dict in train_loader:
             """batch_data_dict: {
-                'audio_name': (batch_size [*2 if mixup],), 
-                'waveform': (batch_size [*2 if mixup], clip_samples), 
-                'target': (batch_size [*2 if mixup], classes_num), 
-                (ifexist) 'mixup_lambda': (batch_size * 2,)}
+                'audio_name': (batch_size,), 
+                'waveform': (batch_size, clip_samples), 
+                'target': (batch_size, classes_num), 
             """
-            # Mixup lambda
-            if "mixup" in augmentation:
-                batch_data_dict["mixup_lambda"] = mixup_augmenter.get_lambda(
-                    batch_size=len(batch_data_dict["waveform"])
-                )
-
             if iteration % 100 == 0:
                 save_checkpoint(epoch, model, checkpoints_dir)
 
@@ -185,31 +174,14 @@ def train(
             # Forward
             model.train()
 
-            if "mixup" in augmentation:
-                batch_output_dict = model(
-                    batch_data_dict["waveform"], batch_data_dict["mixup_lambda"]
-                )
-                """{'clipwise_output': (batch_size, classes_num), ...}"""
+            batch_output_dict = model(batch_data_dict["waveform"], None)
 
-                batch_target_dict = {
-                    "target": do_mixup(
-                        batch_data_dict["target"], batch_data_dict["mixup_lambda"]
-                    )
-                }
-                """{'target': (batch_size, classes_num)}"""
-            else:
-                batch_output_dict = model(batch_data_dict["waveform"], None)
-                """{'clipwise_output': (batch_size, classes_num), ...}"""
-                # print(batch_output_dict)
-
-                batch_target_dict = {"target": batch_data_dict["target"]}
-                """{'target': (batch_size, classes_num)}"""
-                # print(batch_target_dict)
+            batch_target_dict = {"target": batch_data_dict["target"]}
 
             # Loss
             loss = loss_func(batch_output_dict, batch_target_dict)
             writer.add_scalar("Loss/train", float(loss), iteration)
-            pbar.set_postfix(loss=loss, iteration=iteration)
+            pbar.set_postfix(loss=float(loss), iteration=iteration)
             iteration += 1
 
             # Backward
@@ -259,9 +231,6 @@ if __name__ == "__main__":
         default="balanced",
         choices=["none", "balanced", "alternate"],
     )
-    parser.add_argument(
-        "--augmentation", type=str, default="none", choices=["none", "mixup"]
-    )
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--resume_iteration", type=int, default=0)
@@ -269,6 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--cuda", action="store_true", default=True)
     parser.add_argument("--train_csv_path")
     parser.add_argument("--classes_num", default=config.classes_num, type=int)
+    parser.add_argument("--audio_len_sec", default=10, type=int)
 
     args = parser.parse_args()
     args.filename = get_filename(__file__)
@@ -285,7 +255,6 @@ if __name__ == "__main__":
         args.model_type,
         args.loss_type,
         args.balanced,
-        args.augmentation,
         args.batch_size,
         args.learning_rate,
         args.resume_iteration,
@@ -294,4 +263,5 @@ if __name__ == "__main__":
         args.train_csv_path,
         args.classes_num,
         args.filename,
+        args.audio_len_sec,
     )
