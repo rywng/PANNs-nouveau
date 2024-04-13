@@ -2,7 +2,6 @@ import argparse
 import datetime
 import logging
 import os
-import time
 
 import torch.optim as optim
 import torch.utils.data
@@ -15,10 +14,10 @@ from utils.utilities import (
     create_logging,
     Mixup,
 )
-from pytorch import models
+from pytorch import models  # noqa: F401
 import tqdm
 
-from pytorch.losses import get_loss_func
+from pytorch.losses import Loss_functions
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -75,12 +74,10 @@ def train(
     # Your existing code goes here
 
     num_workers = 8
-    loss_func = get_loss_func(loss_type)
+    loss_func = Loss_functions().get_loss_func(loss_type)
 
     # Paths
-    checkpoints_dir = os.path.join(
-        workspace,
-        "checkpoints",
+    postfix = os.path.join(
         filename,
         "sample_rate={},window_size={},hop_size={},mel_bins={},fmin={},fmax={}".format(
             sample_rate, window_size, hop_size, mel_bins, fmin, fmax
@@ -93,40 +90,13 @@ def train(
         "batch_size={}".format(batch_size),
         current_time,
     )
+    checkpoints_dir = os.path.join(workspace, "checkpoints", postfix)
     create_folder(checkpoints_dir)
 
-    statistics_dir = os.path.join(
-        workspace,
-        "statistics",
-        filename,
-        "sample_rate={},window_size={},hop_size={},mel_bins={},fmin={},fmax={}".format(
-            sample_rate, window_size, hop_size, mel_bins, fmin, fmax
-        ),
-        "data_type={}".format(data_type),
-        model_type,
-        "loss_type={}".format(loss_type),
-        "balanced={}".format(balanced),
-        "augmentation={}".format(augmentation),
-        "batch_size={}".format(batch_size),
-        current_time,
-    )
+    statistics_dir = os.path.join(workspace, "statistics", postfix)
     create_folder(statistics_dir)
 
-    logs_dir = os.path.join(
-        workspace,
-        "logs",
-        filename,
-        "sample_rate={},window_size={},hop_size={},mel_bins={},fmin={},fmax={}".format(
-            sample_rate, window_size, hop_size, mel_bins, fmin, fmax
-        ),
-        "data_type={}".format(data_type),
-        model_type,
-        "loss_type={}".format(loss_type),
-        "balanced={}".format(balanced),
-        "augmentation={}".format(augmentation),
-        "batch_size={}".format(batch_size),
-        current_time,
-    )
+    logs_dir = os.path.join(workspace, "logs", postfix)
 
     create_logging(logs_dir, filemode="w")
     writer = SummaryWriter(log_dir=statistics_dir)
@@ -134,7 +104,9 @@ def train(
     # Model
     # Model = models.Cnn14
     Model = eval(f"models.{model_type}")
-    assert model_type in str(Model.__name__), f"Wrong model type: {model_type} and {str(Model.__name__)}"
+    assert model_type in str(
+        Model.__name__
+    ), f"Wrong model type: {model_type} and {str(Model.__name__)}"
     model = Model(
         sample_rate=sample_rate,
         window_size=window_size,
@@ -236,9 +208,9 @@ def train(
 
             # Loss
             loss = loss_func(batch_output_dict, batch_target_dict)
-            writer.add_scalar("Loss/train", loss, iteration)
+            writer.add_scalar("Loss/train", float(loss), iteration)
+            pbar.set_postfix(loss=loss, iteration=iteration)
             iteration += 1
-            pbar.set_postfix(loss=loss)
 
             # Backward
             loss.backward()
@@ -249,15 +221,14 @@ def train(
     writer.flush()
     pbar.close()
 
+
 def save_checkpoint(epoch, model, checkpoints_dir):
     checkpoint = {
         "iteration": epoch,
         "model": model.module.state_dict(),
     }
 
-    checkpoint_path = os.path.join(
-        checkpoints_dir, "{}_iterations.pth".format(epoch)
-    )
+    checkpoint_path = os.path.join(checkpoints_dir, "{}_iterations.pth".format(epoch))
 
     torch.save(checkpoint, checkpoint_path)
 
@@ -280,7 +251,7 @@ if __name__ == "__main__":
     parser.add_argument("--fmax", type=int, default=14000)
     parser.add_argument("--model_type", type=str, required=True)
     parser.add_argument(
-        "--loss_type", type=str, default="clip_bce", choices=["clip_bce"]
+        "--loss_type", type=str, default="clip_bce", choices=["clip_bce", "ce"]
     )
     parser.add_argument(
         "--balanced",
