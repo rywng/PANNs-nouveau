@@ -81,7 +81,6 @@ def train(
             sample_rate, window_size, hop_size, mel_bins, fmin, fmax
         ),
         "data_type={}".format(data_type),
-        model_type,
         "loss_type={}".format(loss_type),
         "balanced={}".format(balanced),
         "batch_size={}".format(batch_size),
@@ -208,7 +207,7 @@ def save_checkpoint(epoch, model, checkpoints_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use this program to train")
 
-    parser.add_argument("--workspace", type=str, required=True)
+    parser.add_argument("--workspace", type=str, default=None)
     parser.add_argument(
         "--data_type",
         type=str,
@@ -216,14 +215,14 @@ if __name__ == "__main__":
         choices=["balanced_train", "full_train"],
     )
     parser.add_argument("--sample_rate", type=int, default=16000)
-    parser.add_argument("--window_size", type=int, default=1024)
-    parser.add_argument("--hop_size", type=int, default=320)
+    parser.add_argument("--window_size", type=int, default=512)
+    parser.add_argument("--hop_size", type=int, default=128)
     parser.add_argument("--mel_bins", type=int, default=64)
     parser.add_argument("--fmin", type=int, default=50)
     parser.add_argument("--fmax", type=int, default=14000)
     parser.add_argument("--model_type", type=str, required=True)
     parser.add_argument(
-        "--loss_type", type=str, default="clip_bce", choices=["clip_bce", "ce"]
+        "--loss_type", type=str, default="ce", choices=["clip_bce", "ce"]
     )
     parser.add_argument(
         "--balanced",
@@ -231,17 +230,24 @@ if __name__ == "__main__":
         default="balanced",
         choices=["none", "balanced", "alternate"],
     )
-    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--batch_size", type=int, default=96)
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--resume_iteration", type=int, default=0)
     parser.add_argument("--early_stop", type=int, default=400)
     parser.add_argument("--cuda", action="store_true", default=True)
-    parser.add_argument("--train_csv_path")
+    parser.add_argument("--train_csv_path", default="../data/metadata/train.csv")
     parser.add_argument("--classes_num", default=config.classes_num, type=int)
     parser.add_argument("--audio_len_sec", default=10, type=int)
 
     args = parser.parse_args()
     args.filename = get_filename(__file__)
+
+    if args.workspace is None:
+        args.workspace = os.path.join("workspaces", args.model_type)
+
+    if args.cuda:
+        # Free performance boost, since input size is static
+        torch.backends.cudnn.benchmark = True
 
     train(
         args.workspace,
