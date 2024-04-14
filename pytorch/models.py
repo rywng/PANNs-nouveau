@@ -210,8 +210,8 @@ class Cnn14(nn.Module):
         self.conv_block5 = ConvBlock(in_channels=64, out_channels=128)
         self.conv_block6 = ConvBlock(in_channels=128, out_channels=256)
 
-        self.fc1 = nn.Linear(256, 256, bias=True)
-        self.fc_audioset = nn.Linear(256, classes_num, bias=True)
+        self.fc1 = nn.Linear(256, 128, bias=True)
+        self.fc_audioset = nn.Linear(128, classes_num, bias=True)
 
         self.init_weight()
 
@@ -516,10 +516,10 @@ class Cnn6(nn.Module):
         self.conv_block1 = ConvBlock5x5(in_channels=1, out_channels=32)
         self.conv_block2 = ConvBlock5x5(in_channels=32, out_channels=64)
         self.conv_block3 = ConvBlock5x5(in_channels=64, out_channels=128)
-        self.conv_block4 = ConvBlock5x5(in_channels=128, out_channels=256)
+        self.conv_block4 = ConvBlock5x5(in_channels=128, out_channels=128)
 
-        self.fc1 = nn.Linear(256, 256, bias=True)
-        self.fc_audioset = nn.Linear(256, classes_num, bias=True)
+        self.fc1 = nn.Linear(128, 128, bias=True)
+        self.fc_audioset = nn.Linear(128, classes_num, bias=True)
 
         self.init_weight()
 
@@ -619,9 +619,9 @@ class Cnn10(nn.Module):
         self.conv_block1 = ConvBlock(in_channels=1, out_channels=32)
         self.conv_block2 = ConvBlock(in_channels=32, out_channels=64)
         self.conv_block3 = ConvBlock(in_channels=64, out_channels=128)
-        self.conv_block4 = ConvBlock(in_channels=128, out_channels=256)
+        self.conv_block4 = ConvBlock(in_channels=128, out_channels=128)
 
-        self.fc1 = nn.Linear(256, 128, bias=True)
+        self.fc1 = nn.Linear(128, 128, bias=True)
         self.fc_audioset = nn.Linear(128, classes_num, bias=True)
 
         self.init_weight()
