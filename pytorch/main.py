@@ -145,6 +145,8 @@ def train(
         amsgrad=True,
     )
 
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.2)
+
     # Parallel
     print("Number of GPU available: {}".format(torch.cuda.device_count()))
     model = torch.nn.DataParallel(model)
@@ -157,14 +159,15 @@ def train(
 
     for epoch in range(early_stop):
         pbar.update()
+        save_checkpoint(iteration, model, checkpoints_dir)
+
         for batch_data_dict in train_loader:
             """batch_data_dict: {
                 'audio_name': (batch_size,), 
                 'waveform': (batch_size, clip_samples), 
                 'target': (batch_size, classes_num), 
             """
-            if iteration % 100 == 0:
-                save_checkpoint(epoch, model, checkpoints_dir)
+            optimizer.zero_grad()
 
             # Move data to device
             for key in batch_data_dict.keys():
@@ -174,7 +177,6 @@ def train(
             model.train()
 
             batch_output_dict = model(batch_data_dict["waveform"], None)
-
             batch_target_dict = {"target": batch_data_dict["target"]}
 
             # Loss
@@ -185,21 +187,23 @@ def train(
 
             # Backward
             loss.backward()
-
             optimizer.step()
-            optimizer.zero_grad()
+
+        scheduler.step()
 
     writer.flush()
     pbar.close()
 
 
-def save_checkpoint(epoch, model, checkpoints_dir):
+def save_checkpoint(iteration, model, checkpoints_dir):
     checkpoint = {
-        "iteration": epoch,
+        "iteration": iteration,
         "model": model.module.state_dict(),
     }
 
-    checkpoint_path = os.path.join(checkpoints_dir, "{}_iterations.pth".format(epoch))
+    checkpoint_path = os.path.join(
+        checkpoints_dir, "{}_iterations.pth".format(iteration)
+    )
 
     torch.save(checkpoint, checkpoint_path)
 
@@ -233,7 +237,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=96)
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--resume_iteration", type=int, default=0)
-    parser.add_argument("--early_stop", type=int, default=400)
+    parser.add_argument("--early_stop", type=int, default=20)
     parser.add_argument("--cuda", action="store_true", default=True)
     parser.add_argument("--train_csv_path", default="../data/metadata/train.csv")
     parser.add_argument(
