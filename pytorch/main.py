@@ -236,7 +236,9 @@ if __name__ == "__main__":
     parser.add_argument("--early_stop", type=int, default=400)
     parser.add_argument("--cuda", action="store_true", default=True)
     parser.add_argument("--train_csv_path", default="../data/metadata/train.csv")
-    parser.add_argument("--classes_num", default=config.classes_num, type=int)
+    parser.add_argument(
+        "--classes_num", default=config.classes_num, type=int
+    )  # Change this when doing classification
     parser.add_argument("--audio_len_sec", default=10, type=int)
 
     args = parser.parse_args()
