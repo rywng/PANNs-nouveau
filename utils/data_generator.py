@@ -25,7 +25,7 @@ class AudioSetDatasetCsv(Dataset):
             )
         else:
             start_pos = random.randint(0, len(input) - target_frame_len)
-            return input[start_pos:start_pos + target_frame_len]
+            return input[start_pos : start_pos + target_frame_len]
 
     def one_hot_encode(self, input, start=1) -> np.ndarray:
         res = []
@@ -102,19 +102,25 @@ class CsvTrainSampler(CsvBase):
         # [data[a][i % len(a)], data[b][i % len(b)] .... data[n][i%len(n)]] for i in range(k)
         max_len = max(value.shape[0] for value in self.label_dicts.values())
 
-        for i in range(max_len + 1 - self.batch_size):
+        i = 0
+        INCREMENT_STEP = (
+            self.batch_size // self.num_labels
+        )  # should increment i by batch_size // num_labels every time, to avoid duplication
+
+        while i in range(max_len - INCREMENT_STEP + 1):
             res_batch = []
             for label in self.label_dicts:
                 for item in (
                     self.label_dicts[label]
                     .slice(
                         i % self.label_dicts[label].shape[0],
-                        self.batch_size // self.num_labels,
+                        INCREMENT_STEP,
                     )
                     .to_dicts()
                 ):
                     res_batch.append(item)
 
+            i += INCREMENT_STEP
             yield res_batch
 
 

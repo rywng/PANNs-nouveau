@@ -145,7 +145,7 @@ def train(
         amsgrad=True,
     )
 
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.2)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.5)
 
     # Parallel
     print("Number of GPU available: {}".format(torch.cuda.device_count()))
@@ -158,9 +158,6 @@ def train(
     iteration = 0
 
     for epoch in range(early_stop):
-        pbar.update()
-        save_checkpoint(iteration, model, checkpoints_dir)
-
         for batch_data_dict in train_loader:
             """batch_data_dict: {
                 'audio_name': (batch_size,), 
@@ -190,6 +187,9 @@ def train(
             optimizer.step()
 
         scheduler.step()
+        pbar.update()
+        save_checkpoint(iteration, model, checkpoints_dir)
+        writer.add_scalar("Epoch/Iteration", epoch, iteration)
 
     writer.flush()
     pbar.close()
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         default="balanced",
         choices=["none", "balanced", "alternate"],
     )
-    parser.add_argument("--batch_size", type=int, default=96)
+    parser.add_argument("--batch_size", type=int, default=288) # 12 * 24
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--resume_iteration", type=int, default=0)
     parser.add_argument("--early_stop", type=int, default=20)
