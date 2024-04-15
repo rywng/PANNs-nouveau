@@ -17,7 +17,7 @@ class AudioSetDatasetCsv(Dataset):
         self.audio_len_sec = audio_len_sec
         self.classes_num = classes_num
 
-    def pad_or_sample(self, input: np.ndarray):
+    def pad_or_sample(self, input: np.ndarray) -> np.ndarray:
         target_frame_len = self.sample_rate * self.audio_len_sec
         if input.shape[0] < target_frame_len:
             return np.concatenate(
@@ -30,7 +30,7 @@ class AudioSetDatasetCsv(Dataset):
     def one_hot_encode(self, input, start=1) -> np.ndarray:
         res = []
         for i in range(self.classes_num):
-            res.append(1 if input == i else 0)
+            res.append(1 if input - start == i else 0)
         return np.array(res, dtype=np.float_)
 
     def __getitem__(self, df_row: dict):
