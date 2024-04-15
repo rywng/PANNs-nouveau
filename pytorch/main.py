@@ -1,4 +1,5 @@
 import argparse
+import random
 import datetime
 import logging
 import os
@@ -180,11 +181,26 @@ def train(
             loss = loss_func(batch_output_dict, batch_target_dict)
             writer.add_scalar("Loss/train", float(loss), iteration)
             pbar.set_postfix(loss=float(loss), iteration=iteration)
-            iteration += 1
 
             # Backward
             loss.backward()
             optimizer.step()
+
+            if iteration % 100 == 0:
+                random_loc = random.randint(0, batch_size - 1)
+                writer.add_audio(
+                    "Prediction/audio",
+                    batch_data_dict["waveform"][random_loc].reshape(1, -1),
+                    iteration,
+                    sample_rate=sample_rate,
+                )
+                writer.add_text(
+                    "Prediction/audio",
+                    f"target: {batch_data_dict['target'][random_loc]}\nprediction: {batch_output_dict['clipwise_output'][random_loc]}\nname: {batch_data_dict['audio_name'][random_loc]}",
+                    iteration,
+                )
+
+            iteration += 1
 
         scheduler.step()
         pbar.update()
@@ -234,7 +250,7 @@ if __name__ == "__main__":
         default="balanced",
         choices=["none", "balanced", "alternate"],
     )
-    parser.add_argument("--batch_size", type=int, default=288) # 12 * 24
+    parser.add_argument("--batch_size", type=int, default=288)  # 12 * 24
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--resume_iteration", type=int, default=0)
     parser.add_argument("--early_stop", type=int, default=20)
