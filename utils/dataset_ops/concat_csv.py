@@ -19,7 +19,7 @@ def concat_csv(
         if downsample_threshold != 0 and downsample_threshold < train_df.shape[0]:
             train_df = train_df.sample(n=downsample_threshold)
 
-        if csv not in no_test_csvs:
+        if no_test_csvs and csv not in no_test_csvs:
             test_size = int(train_df.shape[0] * test_train_ratio)
             test_df = train_df.head(test_size)
             train_df = train_df.tail(-1 * test_size)
@@ -35,10 +35,10 @@ def concat_csv(
             train_res = train_res.vstack(train_df)
         print(f"Train dataset generated for {csv}")
 
-    assert train_res is not None
-    assert test_res is not None
-    train_res.write_csv(os.path.join(output_dir, "train.csv"))
-    test_res.write_csv(os.path.join(output_dir, "test.csv"))
+    if train_res is not None:
+        train_res.write_csv(os.path.join(output_dir, "train.csv"))
+    if test_res is not None:
+        test_res.write_csv(os.path.join(output_dir, "test.csv"))
 
 
 if __name__ == "__main__":

@@ -187,7 +187,7 @@ def train(
             optimizer.step()
 
             if iteration % 100 == 0:
-                random_loc = random.randint(0, batch_size - 1)
+                random_loc = random.randint(0, batch_data_dict["audio_name"].shape[0] - 1)
                 writer.add_audio(
                     "Prediction/audio",
                     batch_data_dict["waveform"][random_loc].reshape(1, -1),
