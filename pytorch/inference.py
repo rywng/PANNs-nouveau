@@ -1,8 +1,10 @@
 import argparse
+import os
 
 import librosa
 import numpy as np
 import torch
+import polars as pl
 
 from pytorch import models  # noqa: F401
 
@@ -18,9 +20,8 @@ def move_data_to_device(x, device):
     return x.to(device)
 
 
-def infer_session(
+def get_infer_session(
     checkpoint_path,
-    audio_path,
     model_type,
     classes_num,
     labels,
@@ -34,9 +35,6 @@ def infer_session(
     """Inference audio tagging result of an audio clip."""
 
     # Arugments & parameters
-    checkpoint_path = args.checkpoint_path
-    audio_path = args.audio_path
-
     device = (
         torch.device("cuda")
         if args.cuda and torch.cuda.is_available()
@@ -62,11 +60,16 @@ def infer_session(
         model.to(device)
         model = torch.nn.DataParallel(model)
 
-    return infer_audio(audio_path, sample_rate, device, model, labels)
+    return device, model
 
 
 def infer_audio(
-    audio_path: str, sample_rate: int, device: torch.device, model, labels: list
+    audio_path: str,
+    sample_rate: int,
+    device: torch.device,
+    model,
+    labels: list,
+    verbose=False,
 ):
     # Load audio
     (waveform, _) = librosa.core.load(audio_path, sr=sample_rate, mono=True)
@@ -83,17 +86,33 @@ def infer_audio(
 
     sorted_indexes = np.argsort(clipwise_output)[::-1]
 
-    label = []
+    pred_labels = []
     # Print audio tagging top probabilities
     for k in range(3):
-        print(
-            "{}: {:.3f}".format(
-                np.array(labels)[sorted_indexes[k]], clipwise_output[sorted_indexes[k]]
+        if verbose:
+            print(
+                "{}: {:.3f}".format(
+                    np.array(labels)[sorted_indexes[k]],
+                    clipwise_output[sorted_indexes[k]],
+                )
             )
-        )
-        label.append(str(np.array(labels)[sorted_indexes[k]]))
+        pred_labels.append(str(np.array(labels)[sorted_indexes[k]]))
 
-    return clipwise_output, labels
+    return clipwise_output, pred_labels
+
+
+def infer_directory(
+    dirpath: str, sample_rate: int, device: torch.device, model, labels: list
+):
+    res_list = []
+    for filename in os.listdir(dirpath):
+        filepath = os.path.join(dirpath, filename)
+        _, pred_label = infer_audio(filepath, sample_rate, device, model, labels)
+        pred_label = pred_label[0]  # get the most likely one
+        res_list.append({"path": filepath, "pred_label": pred_label})
+
+    res_df = pl.DataFrame(res_list)
+    res_df.write_csv(f"prediction-{dirpath.replace('/', '-')}.csv")
 
 
 if __name__ == "__main__":
@@ -102,14 +121,31 @@ if __name__ == "__main__":
     parser.add_argument("checkpoint_path", type=str, help="模型检查点位置")
     parser.add_argument("audio_path", type=str, help="输入音频位置")
     parser.add_argument("model_type", type=str, help="模型类型")
-    parser.add_argument("classes_num", type=str, help="模型类型")
+    parser.add_argument("classes_num", type=int, help="分类数量")
     parser.add_argument(
         "--cuda", action="store_true", default=True, help="是否使用cuda"
     )
+    parser.add_argument(
+        "--sample_rate",
+        type=int,
+        default=16000,
+        help="模型和输入音频的采样率，音频会自动被重采样",
+    )
 
     args = parser.parse_args()
-    labels = ["Cough", "Humming", "Others"]
+    labels = ["Cough", "Humming"]
+    for _ in range(10):
+        labels.append("Negative")
 
-    infer_session(
-        args.checkpoint_path, args.audio_path, args.model_type, args.classes_num, labels
+    device, model = get_infer_session(
+        args.checkpoint_path, args.model_type, args.classes_num, labels
     )
+
+    if os.path.isdir(args.audio_path):
+        infer_directory(args.audio_path, args.sample_rate, device, model, labels)
+    else:
+        print(
+            infer_audio(
+                args.audio_path, args.sample_rate, device, model, labels, verbose=True
+            )
+        )

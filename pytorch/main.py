@@ -33,7 +33,6 @@ def train(
     fmax: int,
     model_type: str,
     loss_type: str,
-    balanced: bool,
     batch_size: int,
     learning_rate: float,
     resume_iteration: int,
@@ -55,7 +54,6 @@ def train(
       mel_bins: int
       model_type: str
       loss_type: 'clip_bce'
-      balanced: 'none' | 'balanced' | 'alternate'
       batch_size: int
       learning_rate: float
       resume_iteration: int
@@ -83,10 +81,12 @@ def train(
         ),
         "data_type={}".format(data_type),
         "loss_type={}".format(loss_type),
-        "balanced={}".format(balanced),
         "batch_size={}".format(batch_size),
+        f"classes_num={classes_num}",
         current_time,
     )
+    print(f"Saving to {postfix}")
+
     checkpoints_dir = os.path.join(workspace, "checkpoints", postfix)
     create_folder(checkpoints_dir)
 
@@ -116,7 +116,7 @@ def train(
 
     params_num = count_parameters(model)
     # flops_num = count_flops(model, clip_samples)
-    logging.info("Parameters num: {}".format(params_num))
+    print("Parameters num: {}".format(params_num))
     # logging.info('Flops num: {:.3f} G'.format(flops_num / 1e9))
 
     # Dataset will be used by DataLoader later. Dataset takes a meta as input
@@ -244,12 +244,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--loss_type", type=str, default="ce", choices=["clip_bce", "ce"]
     )
-    parser.add_argument(
-        "--balanced",
-        type=str,
-        default="balanced",
-        choices=["none", "balanced", "alternate"],
-    )
     parser.add_argument("--batch_size", type=int, default=288)  # 12 * 24
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--resume_iteration", type=int, default=0)
@@ -282,7 +276,6 @@ if __name__ == "__main__":
         args.fmax,
         args.model_type,
         args.loss_type,
-        args.balanced,
         args.batch_size,
         args.learning_rate,
         args.resume_iteration,
