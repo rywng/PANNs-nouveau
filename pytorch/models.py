@@ -269,7 +269,7 @@ class Cnn14_BCE(nn.Module):
     def __init__(
         self, sample_rate, window_size, hop_size, mel_bins, fmin, fmax, classes_num
     ):
-        super(Cnn14, self).__init__()
+        super(Cnn14_BCE, self).__init__()
 
         window = "hann"
         center = True
@@ -681,7 +681,7 @@ class Cnn6_BCE(nn.Module):
     def __init__(
         self, sample_rate, window_size, hop_size, mel_bins, fmin, fmax, classes_num
     ):
-        super(Cnn6, self).__init__()
+        super(Cnn6_BCE, self).__init__()
 
         window = "hann"
         center = True
@@ -887,7 +887,7 @@ class Cnn10_BCE(nn.Module):
     def __init__(
         self, sample_rate, window_size, hop_size, mel_bins, fmin, fmax, classes_num
     ):
-        super(Cnn10, self).__init__()
+        super(Cnn10_BCE, self).__init__()
 
         window = "hann"
         center = True
