@@ -7,15 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 import torch
-from sklearn.metrics import (
-    roc_curve,
-    auc,
-    precision_recall_curve,
-    average_precision_score,
-)
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score, confusion_matrix, ConfusionMatrixDisplay
 
 from pytorch import models  # noqa: F401
-
 
 def three_classes_one_hot_encode(input: int, start=1) -> np.ndarray:
     res = []
@@ -92,7 +86,7 @@ def infer_audio(
     model,
     label_names: list,
     verbose=False,
-    audio_length: float = 5, # defaults to 5 seconds
+    audio_length: float = 5,  # defaults to 5 seconds
 ):
     # Load audio
     (waveform, _) = librosa.core.load(
@@ -173,16 +167,34 @@ def infer_csv(
             )
 
             score_list.append(convert_to_3classes(infer_result[0]))
-            score_label_list.append({"path": audio_path, "label": infer_result[1][0]})
+            score_label_list.append(
+                {"path": audio_path, "label": label_names.index(infer_result[1][0])}
+            )
 
     pl.DataFrame(score_label_list).write_csv(f"{output_name}.csv")
 
-    # Compute precision and recall for each class
     truth_np = np.array(truth_list)
     score_np = np.array(score_list)
 
+    plot_confusion_matrix(
+        np.argmax(truth_np, axis=1),
+        np.array([a["label"] for a in score_label_list]),
+        label_names,
+        output_name,
+    )
     plot_pr(truth_np, score_np, label_names, output_name)
-    # Compute ROC curve and ROC area for each class
+    plot_roc(truth_np, score_np, label_names, output_name)
+
+
+def plot_confusion_matrix(truth_np, score_np, label_names, output_name):
+    cm = confusion_matrix(truth_np, score_np)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+
+    disp.plot()
+    plt.savefig(f"{output_name}-confusion.png")
+
+
+def plot_roc(truth_np, score_np, label_names, output_name):
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
