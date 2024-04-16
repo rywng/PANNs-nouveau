@@ -7,7 +7,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 import torch
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
+from sklearn.metrics import (
+    roc_curve,
+    auc,
+    precision_recall_curve,
+    average_precision_score,
+)
 
 from pytorch import models  # noqa: F401
 
@@ -87,9 +92,12 @@ def infer_audio(
     model,
     label_names: list,
     verbose=False,
+    audio_length: float = 5, # defaults to 5 seconds
 ):
     # Load audio
-    (waveform, _) = librosa.core.load(audio_path, sr=sample_rate, mono=True)
+    (waveform, _) = librosa.core.load(
+        audio_path, sr=sample_rate, mono=True, duration=audio_length
+    )
 
     waveform = waveform[None, :]  # (1, audio_length)
     waveform = move_data_to_device(waveform, device)
@@ -185,14 +193,18 @@ def infer_csv(
     # Plot ROC curve for each class
     plt.figure()
     for i in range(truth_np.shape[1]):
-        plt.plot(fpr[i], tpr[i], label='Class: {} (AUC = {:.2f})'.format(label_names[i], roc_auc[i]))
+        plt.plot(
+            fpr[i],
+            tpr[i],
+            label="Class: {} (AUC = {:.2f})".format(label_names[i], roc_auc[i]),
+        )
 
-    plt.plot([0, 1], [0, 1], 'k--')
+    plt.plot([0, 1], [0, 1], "k--")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC curve')
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC curve")
     plt.legend(loc="best")
     plt.savefig(f"{output_name}-ROC.png")
 
