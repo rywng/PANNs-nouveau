@@ -1,14 +1,13 @@
 import argparse
-import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
 import csv
 import os
 
 import librosa
+import matplotlib.pyplot as plt
 import numpy as np
-import torch
 import polars as pl
+import torch
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
 
 from pytorch import models  # noqa: F401
 
@@ -44,11 +43,11 @@ def get_infer_session(
     classes_num,
     label_names,
     sample_rate=16000,
-    window_size=512,
-    hop_size=128,
+    window_size=400,
+    hop_size=160,
     mel_bins=64,
-    fmin=50,
-    fmax=14000,
+    fmin=20,
+    fmax=7800,
 ):
     """Inference audio tagging result of an audio clip."""
 
@@ -147,6 +146,8 @@ def infer_csv(
     label_names: list,
     output_name: str,
 ):
+    # TODO: refactor code
+
     truth_list = []
     score_list = []
 
@@ -172,6 +173,31 @@ def infer_csv(
     truth_np = np.array(truth_list)
     score_np = np.array(score_list)
 
+    plot_pr(truth_np, score_np, label_names, output_name)
+    # Compute ROC curve and ROC area for each class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(truth_np.shape[1]):
+        fpr[i], tpr[i], _ = roc_curve(truth_np[:, i], score_np[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Plot ROC curve for each class
+    plt.figure()
+    for i in range(truth_np.shape[1]):
+        plt.plot(fpr[i], tpr[i], label='Class: {} (AUC = {:.2f})'.format(label_names[i], roc_auc[i]))
+
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC curve')
+    plt.legend(loc="best")
+    plt.savefig(f"{output_name}-ROC.png")
+
+
+def plot_pr(truth_np, score_np, label_names, output_name):
     precision = dict()
     recall = dict()
     average_precision = dict()
@@ -202,7 +228,7 @@ def infer_csv(
         )
     )
     plt.legend(loc="best")
-    plt.savefig(f"{output_name}.png")
+    plt.savefig(f"{output_name}-PR.png")
 
 
 if __name__ == "__main__":
@@ -240,7 +266,7 @@ if __name__ == "__main__":
             device,
             model,
             label_names,
-            f"{args.model_type}-{args.classes_num}.csv",
+            f"{args.model_type}-{args.classes_num}",
         )
     else:
         print(
