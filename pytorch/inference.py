@@ -112,7 +112,13 @@ def infer_directory(
         res_list.append({"path": filepath, "pred_label": pred_label})
 
     res_df = pl.DataFrame(res_list)
-    res_df.write_csv(f"prediction-{dirpath.replace('/', '-')}.csv")
+    print("Statistics:")
+    for label in labels[:3]:
+        print(f"{label}: {res_df.filter(pl.col('pred_label') == label).shape[0]}")
+
+    save_path = f"prediction-{dirpath.replace('/', '-')}.csv"
+    print(f"Saving to {save_path}")
+    res_df.write_csv(save_path)
 
 
 if __name__ == "__main__":
@@ -143,6 +149,8 @@ if __name__ == "__main__":
 
     if os.path.isdir(args.audio_path):
         infer_directory(args.audio_path, args.sample_rate, device, model, labels)
+    elif args.audio_path.endswith(".csv"):
+        pass
     else:
         print(
             infer_audio(
