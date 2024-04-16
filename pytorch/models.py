@@ -258,7 +258,7 @@ class Cnn14(nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu_(self.fc1(x))
         embedding = F.dropout(x, p=0.5, training=self.training)
-        clipwise_output = torch.softmax(self.fc_audioset(x), dim=1)
+        clipwise_output = self.fc_audioset(x)
 
         output_dict = {"clipwise_output": clipwise_output, "embedding": embedding}
 
@@ -671,7 +671,7 @@ class Cnn6(nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu_(self.fc1(x))
         embedding = F.dropout(x, p=0.5, training=self.training)
-        clipwise_output = torch.softmax(self.fc_audioset(x), dim=1)
+        clipwise_output = self.fc_audioset(x)
 
         output_dict = {"clipwise_output": clipwise_output, "embedding": embedding}
 
@@ -876,7 +876,7 @@ class Cnn10(nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu_(self.fc1(x))
         embedding = F.dropout(x, p=0.5, training=self.training)
-        clipwise_output = torch.softmax(self.fc_audioset(x), dim=1)
+        clipwise_output = self.fc_audioset(x)
 
         output_dict = {"clipwise_output": clipwise_output, "embedding": embedding}
 
