@@ -2,6 +2,7 @@ librosa
 matplotlib
 pandas
 polars
+scikit-learn
 soundfile
 tensorboard
 torch
