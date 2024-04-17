@@ -235,11 +235,11 @@ if __name__ == "__main__":
         choices=["balanced_train", "full_train"],
     )
     parser.add_argument("--sample_rate", type=int, default=16000)
-    parser.add_argument("--window_size", type=int, default=400)
+    parser.add_argument("--window_size", type=int, default=512)
     parser.add_argument("--hop_size", type=int, default=160)
     parser.add_argument("--mel_bins", type=int, default=64)
-    parser.add_argument("--fmin", type=int, default=20)
-    parser.add_argument("--fmax", type=int, default=7800)
+    parser.add_argument("--fmin", type=int, default=0)
+    parser.add_argument("--fmax", type=int, default=8000)
     parser.add_argument("--model_type", type=str, required=True)
     parser.add_argument(
         "--loss_type", type=str, default="ce", choices=["clip_bce", "ce"]

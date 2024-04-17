@@ -42,11 +42,11 @@ def get_infer_session(
     classes_num,
     label_names,
     sample_rate=16000,
-    window_size=400,
+    window_size=512,
     hop_size=160,
     mel_bins=64,
-    fmin=20,
-    fmax=7800,
+    fmin=0,
+    fmax=8000,
 ):
     """Inference audio tagging result of an audio clip."""
 
