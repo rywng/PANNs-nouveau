@@ -208,7 +208,6 @@ def print_recall_fa(truth_labels, prediction_labels, label_names):
         pred_tp = pred_tp_fn[pred_tp_fn == i]
         recall = len(pred_tp) / len(pred_tp_fn)
         print(f"Recall for label {label_names[i]}:\t{recall}")
-        print()
 
     negative_index = np.max(truth_labels)
     pred_tn_fp = prediction_labels[truth_labels == negative_index]

@@ -13,7 +13,7 @@ from common.losses import Loss_functions
 from common.metadata import config
 from torch.utils.tensorboard import SummaryWriter
 
-from common import models  # noqa: F401
+from common import models
 
 
 def train(
