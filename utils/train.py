@@ -1,25 +1,19 @@
 import argparse
-import random
 import datetime
-import logging
 import os
+import random
 
 import torch.optim as optim
 import torch.utils.data
-from pytorch.pytorch_utils import move_data_to_device, count_parameters
-from utils import config
-from utils.data_generator import AudioSetDatasetCsv, collate_fn, CsvTrainSampler
-from utils.utilities import (
-    create_folder,
-    get_filename,
-    create_logging,
-)
-from pytorch import models  # noqa: F401
 import tqdm
-
-from pytorch.losses import Loss_functions
-
+from common.data_generator import AudioSetDatasetCsv, collate_fn, CsvTrainSampler
+from common.data_ops import move_data_to_device, count_parameters
+from common.file_ops import create_folder, get_filename, create_logging
+from common.losses import Loss_functions
+from common.metadata import config
 from torch.utils.tensorboard import SummaryWriter
+
+from common import models  # noqa: F401
 
 
 def train(
@@ -187,7 +181,9 @@ def train(
             optimizer.step()
 
             if iteration % 100 == 0:
-                random_loc = random.randint(0, batch_data_dict["audio_name"].shape[0] - 1)
+                random_loc = random.randint(
+                    0, batch_data_dict["audio_name"].shape[0] - 1
+                )
                 writer.add_audio(
                     "Prediction/audio",
                     batch_data_dict["waveform"][random_loc].reshape(1, -1),

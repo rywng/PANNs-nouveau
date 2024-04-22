@@ -6,9 +6,9 @@ import torch.nn as nn
 
 
 def move_data_to_device(x, device):
-    if 'float' in str(x.dtype):
+    if "float" in str(x.dtype):
         x = torch.Tensor(x)
-    elif 'int' in str(x.dtype):
+    elif "int" in str(x.dtype):
         x = torch.LongTensor(x)
     else:
         return x
@@ -17,7 +17,7 @@ def move_data_to_device(x, device):
 
 
 def do_mixup(x, mixup_lambda):
-    """Mixup x of even indexes (0, 2, 4, ...) with x of odd indexes 
+    """Mixup x of even indexes (0, 2, 4, ...) with x of odd indexes
     (1, 3, 5, ...).
 
     Args:
@@ -27,10 +27,12 @@ def do_mixup(x, mixup_lambda):
     Returns:
       out: (batch_size, ...)
     """
-    out = (x[0 :: 2].transpose(0, -1) * mixup_lambda[0 :: 2] + \
-        x[1 :: 2].transpose(0, -1) * mixup_lambda[1 :: 2]).transpose(0, -1)
+    out = (
+        x[0::2].transpose(0, -1) * mixup_lambda[0::2]
+        + x[1::2].transpose(0, -1) * mixup_lambda[1::2]
+    ).transpose(0, -1)
     return out
-    
+
 
 def append_to_dict(dict, key, value):
     if key in dict.keys():
@@ -39,11 +41,10 @@ def append_to_dict(dict, key, value):
         dict[key] = [value]
 
 
-def forward(model, generator, return_input=False, 
-    return_target=False):
+def forward(model, generator, return_input=False, return_target=False):
     """Forward data to a model.
-    
-    Args: 
+
+    Args:
       model: object
       generator: object
       return_input: bool
@@ -64,35 +65,47 @@ def forward(model, generator, return_input=False,
     # Forward data to a model in mini-batches
     for n, batch_data_dict in enumerate(generator):
         print(n)
-        batch_waveform = move_data_to_device(batch_data_dict['waveform'], device)
-        
+        batch_waveform = move_data_to_device(batch_data_dict["waveform"], device)
+
         with torch.no_grad():
             model.eval()
             batch_output = model(batch_waveform)
 
-        append_to_dict(output_dict, 'audio_name', batch_data_dict['audio_name'])
+        append_to_dict(output_dict, "audio_name", batch_data_dict["audio_name"])
 
-        append_to_dict(output_dict, 'clipwise_output', 
-            batch_output['clipwise_output'].data.cpu().numpy())
+        append_to_dict(
+            output_dict,
+            "clipwise_output",
+            batch_output["clipwise_output"].data.cpu().numpy(),
+        )
 
-        if 'segmentwise_output' in batch_output.keys():
-            append_to_dict(output_dict, 'segmentwise_output', 
-                batch_output['segmentwise_output'].data.cpu().numpy())
+        if "segmentwise_output" in batch_output.keys():
+            append_to_dict(
+                output_dict,
+                "segmentwise_output",
+                batch_output["segmentwise_output"].data.cpu().numpy(),
+            )
 
-        if 'framewise_output' in batch_output.keys():
-            append_to_dict(output_dict, 'framewise_output', 
-                batch_output['framewise_output'].data.cpu().numpy())
-            
+        if "framewise_output" in batch_output.keys():
+            append_to_dict(
+                output_dict,
+                "framewise_output",
+                batch_output["framewise_output"].data.cpu().numpy(),
+            )
+
         if return_input:
-            append_to_dict(output_dict, 'waveform', batch_data_dict['waveform'])
-            
+            append_to_dict(output_dict, "waveform", batch_data_dict["waveform"])
+
         if return_target:
-            if 'target' in batch_data_dict.keys():
-                append_to_dict(output_dict, 'target', batch_data_dict['target'])
+            if "target" in batch_data_dict.keys():
+                append_to_dict(output_dict, "target", batch_data_dict["target"])
 
         if n % 10 == 0:
-            print(' --- Inference time: {:.3f} s / 10 iterations ---'.format(
-                time.time() - time1))
+            print(
+                " --- Inference time: {:.3f} s / 10 iterations ---".format(
+                    time.time() - time1
+                )
+            )
             time1 = time.time()
 
     for key in output_dict.keys():
@@ -102,9 +115,9 @@ def forward(model, generator, return_input=False,
 
 
 def interpolate(x, ratio):
-    """Interpolate data in time domain. This is used to compensate the 
+    """Interpolate data in time domain. This is used to compensate the
     resolution reduction in downsampling of a CNN.
-    
+
     Args:
       x: (batch_size, time_steps, classes_num)
       ratio: int, ratio to interpolate
@@ -119,7 +132,7 @@ def interpolate(x, ratio):
 
 
 def pad_framewise_output(framewise_output, frames_num):
-    """Pad framewise_output to the same length as input frames. The pad value 
+    """Pad framewise_output to the same length as input frames. The pad value
     is the same as the value of the last frame.
 
     Args:
@@ -129,7 +142,9 @@ def pad_framewise_output(framewise_output, frames_num):
     Outputs:
       output: (batch_size, frames_num, classes_num)
     """
-    pad = framewise_output[:, -1 :, :].repeat(1, frames_num - framewise_output.shape[1], 1)
+    pad = framewise_output[:, -1:, :].repeat(
+        1, frames_num - framewise_output.shape[1], 1
+    )
     """tensor for padding"""
 
     output = torch.cat((framewise_output, pad), dim=1)
@@ -139,11 +154,20 @@ def pad_framewise_output(framewise_output, frames_num):
 
 
 def count_parameters(model) -> str:
-
     def human_format(number) -> str:
-        units = ['', 'K', 'M', 'G', 'T', 'P']
+        units = ["", "K", "M", "G", "T", "P"]
         k = 1000.0
         magnitude = int(floor(log(number, k)))
-        return '%.2f%s' % (number / k**magnitude, units[magnitude])
+        return "%.2f%s" % (number / k**magnitude, units[magnitude])
 
     return human_format(sum(p.numel() for p in model.parameters() if p.requires_grad))
+
+
+def float32_to_int16(x):
+    assert np.max(np.abs(x)) <= 1.2
+    x = np.clip(x, -1, 1)
+    return (x * 32767.0).astype(np.int16)
+
+
+def int16_to_float32(x):
+    return (x / 32767.0).astype(np.float32)

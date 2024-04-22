@@ -7,9 +7,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 import torch
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import (
+    roc_curve,
+    auc,
+    precision_recall_curve,
+    average_precision_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+)
 
-from pytorch import models  # noqa: F401
+from common import models  # noqa: F401
+
 
 def three_classes_one_hot_encode(input: int, start=1) -> np.ndarray:
     res = []
@@ -184,6 +192,29 @@ def infer_csv(
     )
     plot_pr(truth_np, score_np, label_names, output_name)
     plot_roc(truth_np, score_np, label_names, output_name)
+
+    print_recall_fa(
+        np.argmax(truth_np, axis=1),
+        np.array([a["label"] for a in score_label_list]),
+        label_names,
+    )
+
+
+def print_recall_fa(truth_labels, prediction_labels, label_names):
+    for i in range(np.max(truth_labels)):
+        # Select label i as current pred target, and only calculate recall, fa for
+        # predictions whose target should be i
+        pred_tp_fn = prediction_labels[truth_labels == i]
+        pred_tp = pred_tp_fn[pred_tp_fn == i]
+        recall = len(pred_tp) / len(pred_tp_fn)
+        print(f"Recall for label {label_names[i]}:\t{recall}")
+        print()
+
+    negative_index = np.max(truth_labels)
+    pred_tn_fp = prediction_labels[truth_labels == negative_index]
+    pred_fp = pred_tn_fp[pred_tn_fp != negative_index]
+    fpr = len(pred_fp) / len(pred_tn_fp)
+    print(f"False positive rate for label {label_names[negative_index]}:\t{fpr}")
 
 
 def plot_confusion_matrix(truth_np, score_np, label_names, output_name):
