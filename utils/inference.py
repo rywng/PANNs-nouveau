@@ -19,18 +19,18 @@ from sklearn.metrics import (
 from common import models  # noqa: F401
 
 
-def three_classes_one_hot_encode(input: int, start=1) -> np.ndarray:
+def one_hot_encode(input: int, start=1, max_classes=3) -> np.ndarray:
     res = []
-    for i in range(3):
+    for i in range(max_classes):
         res.append(1 if input - start == i else 0)
-    if input > 3:
-        res[2] = 1
+    if input > max_classes:
+        res[max_classes - 1] = 1
     return np.array(res, dtype=np.float_)
 
 
-def convert_to_3classes(input_list: np.ndarray) -> np.ndarray:
-    input_list[2] = np.max(input_list[2:])
-    return np.resize(input_list, (3,))
+def truncate_classes(input_list: np.ndarray, max_classes=3) -> np.ndarray:
+    input_list[max_classes - 1] = np.max(input_list[max_classes - 1 :])
+    return np.resize(input_list, (max_classes,))
 
 
 def move_data_to_device(x, device):
@@ -168,13 +168,13 @@ def infer_csv(
         for line in reader:
             audio_path = line["path"]
 
-            truth_list.append(three_classes_one_hot_encode(int(line["label"])))
+            truth_list.append(one_hot_encode(int(line["label"])))
 
             infer_result = infer_audio(
                 audio_path, sample_rate, device, model, label_names
             )
 
-            score_list.append(convert_to_3classes(infer_result[0]))
+            score_list.append(truncate_classes(infer_result[0]))
             score_label_list.append(
                 {"path": audio_path, "label": label_names.index(infer_result[1][0])}
             )
