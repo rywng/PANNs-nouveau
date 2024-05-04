@@ -13,7 +13,7 @@ from common.losses import Loss_functions
 from common.metadata import config
 from torch.utils.tensorboard import SummaryWriter
 
-from common import models
+from common import models  # noqa: F401
 
 
 def train(
@@ -249,7 +249,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--classes_num", default=config.classes_num, type=int
     )  # Change this when doing classification
-    parser.add_argument("--audio_len_sec", default=10, type=int)
+    parser.add_argument("--audio_len_sec", default=5, type=int)
 
     args = parser.parse_args()
     args.filename = get_filename(__file__)
