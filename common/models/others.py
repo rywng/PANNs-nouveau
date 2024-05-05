@@ -7,11 +7,11 @@ from torchlibrosa.augmentation import SpecAugmentation
 from torchlibrosa.stft import Spectrogram, LogmelFilterBank
 
 
-class MobileNetV1(nn.Module):
+class MobileNetV1_HALF(nn.Module):
     def __init__(
         self, sample_rate, window_size, hop_size, mel_bins, fmin, fmax, classes_num
     ):
-        super(MobileNetV1, self).__init__()
+        super(MobileNetV1_HALF, self).__init__()
 
         window = "hann"
         center = True
@@ -84,24 +84,24 @@ class MobileNetV1(nn.Module):
             return _layers
 
         self.features = nn.Sequential(
-            conv_bn(1, 32, 2),
-            conv_dw(32, 64, 1),
+            conv_bn(1, 16, 2),
+            conv_dw(16, 32, 1),
+            conv_dw(32, 64, 2),
+            conv_dw(64, 64, 1),
             conv_dw(64, 128, 2),
             conv_dw(128, 128, 1),
             conv_dw(128, 256, 2),
             conv_dw(256, 256, 1),
+            conv_dw(256, 256, 1),
+            conv_dw(256, 256, 1),
+            conv_dw(256, 256, 1),
+            conv_dw(256, 256, 1),
             conv_dw(256, 512, 2),
             conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 512, 1),
-            conv_dw(512, 1024, 2),
-            conv_dw(1024, 1024, 1),
         )
 
-        self.fc1 = nn.Linear(1024, 1024, bias=True)
-        self.fc_audioset = nn.Linear(1024, classes_num, bias=True)
+        self.fc1 = nn.Linear(512, 512, bias=True)
+        self.fc_audioset = nn.Linear(512, classes_num, bias=True)
 
         self.init_weights()
 
