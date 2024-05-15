@@ -190,6 +190,18 @@ def infer_csv(
         label_names,
         output_name,
     )
+
+    # Output a 2x2 confusion matrix
+    replace_dict = {1: 0, 2: 1, 0: 0}
+    plot_confusion_matrix(
+        np.vectorize(replace_dict.get)(np.argmax(truth_np, axis=1)),
+        np.vectorize(replace_dict.get)(
+            np.array([a["label"] for a in score_label_list])
+        ),
+        label_names,
+        output_name + "-2x2",
+    )
+
     plot_pr(truth_np, score_np, label_names, output_name)
     plot_roc(truth_np, score_np, label_names, output_name)
 
