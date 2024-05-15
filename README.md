@@ -4,7 +4,7 @@ This is a fork of PANNs, main differences are shown below:
 
 - Code quality
   - Use relative imports instead of `sys.path.insert` (this is why python sucks)
-  - Use a directory structure that makes sense. Instead of one flat directory with everything inside, or even worse, two flat directories with interlinked dependency (WIP)
+  - Use a directory structure that makes sense. Instead of one flat directory with everything inside, or even worse, two flat directories with interlinked dependency
   - Redundant features removed
     - The whole hdf5 thing is removed, it doesn't make any sense when you can simply load waveforms from csvs. This complicates everything for devs and users.
     - No "black list csv" thing, you don't need it.
