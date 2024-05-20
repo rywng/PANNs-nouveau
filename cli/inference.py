@@ -1,4 +1,5 @@
 import argparse
+import quanto
 import csv
 import os
 
@@ -105,8 +106,8 @@ def infer_audio(
     waveform = move_data_to_device(waveform, device)
 
     # Forward
+    model.eval()
     with torch.no_grad():
-        model.eval()
         batch_output_dict = model(waveform, None)
 
     clipwise_output = batch_output_dict["clipwise_output"].data.cpu().numpy()[0]
@@ -313,6 +314,9 @@ if __name__ == "__main__":
         default=16000,
         help="模型和输入音频的采样率，音频会自动被重采样",
     )
+    parser.add_argument(
+        "--quantize", action="store_true", default=False, help="是否量化模型至int8"
+    )
 
     args = parser.parse_args()
     label_names = ["Cough", "Humming"]
@@ -322,6 +326,9 @@ if __name__ == "__main__":
     device, model = get_infer_session(
         args.checkpoint_path, args.model_type, args.classes_num, label_names
     )
+
+    if args.quantize:
+        quanto.quantize(model, weights=quanto.qint8)
 
     if os.path.isdir(args.audio_path):
         infer_directory(args.audio_path, args.sample_rate, device, model, label_names)
