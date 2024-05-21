@@ -1,5 +1,4 @@
 import argparse
-import quanto
 import csv
 import os
 
@@ -7,6 +6,7 @@ import librosa
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
+import quanto
 import torch
 from sklearn.metrics import (
     roc_curve,
@@ -18,7 +18,6 @@ from sklearn.metrics import (
 )
 
 from common import models  # noqa: F401
-
 
 def one_hot_encode(input: int, start=1, max_classes=3) -> np.ndarray:
     res = []
@@ -85,6 +84,7 @@ def get_infer_session(
         model.to(device)
         model = torch.nn.DataParallel(model)
 
+    model.eval()
     return device, model
 
 
@@ -106,7 +106,6 @@ def infer_audio(
     waveform = move_data_to_device(waveform, device)
 
     # Forward
-    model.eval()
     with torch.no_grad():
         batch_output_dict = model(waveform, None)
 
@@ -177,7 +176,11 @@ def infer_csv(
 
             score_list.append(truncate_classes(infer_result[0]))
             score_label_list.append(
-                {"path": audio_path, "label": label_names.index(infer_result[1][0])}
+                {
+                    "path": audio_path,
+                    "label": label_names.index(infer_result[1][0]),
+                    "score": str(infer_result[0]).replace("\n", ""),
+                }
             )
 
     pl.DataFrame(score_label_list).write_csv(f"{output_name}.csv")
