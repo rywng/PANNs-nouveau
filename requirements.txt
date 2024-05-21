@@ -7,5 +7,6 @@ scikit-learn
 soundfile
 tensorboard
 torch
+torchinfo
 torchlibrosa
 tqdm

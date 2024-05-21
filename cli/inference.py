@@ -19,6 +19,7 @@ from sklearn.metrics import (
 
 from common import models  # noqa: F401
 
+
 def one_hot_encode(input: int, start=1, max_classes=3) -> np.ndarray:
     res = []
     for i in range(max_classes):
@@ -49,6 +50,7 @@ def get_infer_session(
     model_type,
     classes_num,
     label_names,
+    quantize=False,
     sample_rate=16000,
     window_size=512,
     hop_size=160,
@@ -82,9 +84,15 @@ def get_infer_session(
 
     if "cuda" in str(device):
         model.to(device)
-        model = torch.nn.DataParallel(model)
+        if not quantize:
+            model = torch.nn.DataParallel(model)
 
     model.eval()
+
+    if quantize:
+        quanto.quantize(model, weights=quanto.qint8)
+        quanto.freeze(model)
+
     return device, model
 
 
@@ -327,11 +335,12 @@ if __name__ == "__main__":
         label_names.append("Negative")
 
     device, model = get_infer_session(
-        args.checkpoint_path, args.model_type, args.classes_num, label_names
+        args.checkpoint_path,
+        args.model_type,
+        args.classes_num,
+        label_names,
+        quantize=args.quantize,
     )
-
-    if args.quantize:
-        quanto.quantize(model, weights=quanto.qint8)
 
     if os.path.isdir(args.audio_path):
         infer_directory(args.audio_path, args.sample_rate, device, model, label_names)
