@@ -3,6 +3,7 @@ import csv
 import os
 
 import librosa
+import torchinfo
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
@@ -341,6 +342,10 @@ if __name__ == "__main__":
         label_names,
         quantize=args.quantize,
     )
+
+    torchinfo.summary(
+        model
+    )  # Not specifying input size, since the forward / backward pass size is wrong for quantized models.
 
     if os.path.isdir(args.audio_path):
         infer_directory(args.audio_path, args.sample_rate, device, model, label_names)

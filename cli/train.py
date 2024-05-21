@@ -6,8 +6,9 @@ import random
 import torch.optim as optim
 import torch.utils.data
 import tqdm
+import torchinfo
 from common.data_generator import AudioSetDatasetCsv, collate_fn, CsvTrainSampler
-from common.data_ops import move_data_to_device, count_parameters
+from common.data_ops import move_data_to_device
 from common.file_ops import create_folder, get_filename, create_logging
 from common.losses import Loss_functions
 from common.metadata import config
@@ -108,9 +109,7 @@ def train(
         classes_num=classes_num,
     )
 
-    params_num = count_parameters(model)
-    # flops_num = count_flops(model, clip_samples)
-    print("Parameters num: {}".format(params_num))
+    torchinfo.summary(model)
     # logging.info('Flops num: {:.3f} G'.format(flops_num / 1e9))
 
     # Dataset will be used by DataLoader later. Dataset takes a meta as input
