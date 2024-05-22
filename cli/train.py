@@ -37,6 +37,7 @@ def train(
     classes_num: int,
     filename: str,
     audio_len_sec: int,
+    no_save: bool,
 ):
     """Train AudioSet tagging model.
 
@@ -68,30 +69,25 @@ def train(
     num_workers = 8
     loss_func = Loss_functions().get_loss_func(loss_type)
 
-    # Paths
-    postfix = os.path.join(
-        filename,
-        "sample_rate={},window_size={},hop_size={},mel_bins={},fmin={},fmax={}".format(
-            sample_rate, window_size, hop_size, mel_bins, fmin, fmax
-        ),
-        "data_type={}".format(data_type),
-        "loss_type={}".format(loss_type),
-        "batch_size={}".format(batch_size),
-        f"classes_num={classes_num}",
-        current_time,
-    )
-    print(f"Saving to {postfix}")
-
-    checkpoints_dir = os.path.join(workspace, "checkpoints", postfix)
-    create_folder(checkpoints_dir)
-
-    statistics_dir = os.path.join(workspace, "statistics", postfix)
-    create_folder(statistics_dir)
-
-    logs_dir = os.path.join(workspace, "logs", postfix)
-
-    create_logging(logs_dir, filemode="w")
-    writer = SummaryWriter(log_dir=statistics_dir)
+    if no_save:
+        writer = SummaryWriter()
+        checkpoints_dir = "/dev/null"
+    else:
+        writer, checkpoints_dir = create_save_and_logging(
+            filename,
+            sample_rate,
+            window_size,
+            hop_size,
+            mel_bins,
+            fmin,
+            fmax,
+            data_type,
+            loss_type,
+            batch_size,
+            classes_num,
+            current_time,
+            workspace,
+        )
 
     # Model
     # Model = models.Cnn14
@@ -110,7 +106,6 @@ def train(
     )
 
     torchinfo.summary(model)
-    # logging.info('Flops num: {:.3f} G'.format(flops_num / 1e9))
 
     # Dataset will be used by DataLoader later. Dataset takes a meta as input
     # and return a waveform and a target.
@@ -206,6 +201,44 @@ def train(
     pbar.close()
 
 
+def create_save_and_logging(
+    filename,
+    sample_rate,
+    window_size,
+    hop_size,
+    mel_bins,
+    fmin,
+    fmax,
+    data_type,
+    loss_type,
+    batch_size,
+    classes_num,
+    current_time,
+    workspace,
+):
+    postfix = os.path.join(
+        filename,
+        "sample_rate={},window_size={},hop_size={},mel_bins={},fmin={},fmax={}".format(
+            sample_rate, window_size, hop_size, mel_bins, fmin, fmax
+        ),
+        "data_type={}".format(data_type),
+        "loss_type={}".format(loss_type),
+        "batch_size={}".format(batch_size),
+        f"classes_num={classes_num}",
+        current_time,
+    )
+    print(f"Saving to {postfix}")
+
+    checkpoints_dir = os.path.join(workspace, "checkpoints", postfix)
+    create_folder(checkpoints_dir)
+
+    statistics_dir = os.path.join(workspace, "statistics", postfix)
+    create_folder(statistics_dir)
+
+    writer = SummaryWriter(log_dir=statistics_dir)
+    return writer, checkpoints_dir
+
+
 def save_checkpoint(iteration, model, checkpoints_dir):
     checkpoint = {
         "iteration": iteration,
@@ -249,6 +282,7 @@ if __name__ == "__main__":
         "--classes_num", default=config.classes_num, type=int
     )  # Change this when doing classification
     parser.add_argument("--audio_len_sec", default=5, type=int)
+    parser.add_argument("--no_save", default=False, action="store_true")
 
     args = parser.parse_args()
     args.filename = get_filename(__file__)
@@ -280,4 +314,5 @@ if __name__ == "__main__":
         args.classes_num,
         args.filename,
         args.audio_len_sec,
+        args.no_save,
     )
