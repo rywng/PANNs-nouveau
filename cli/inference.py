@@ -111,6 +111,16 @@ def infer_audio(
         audio_path, sr=sample_rate, mono=True, duration=audio_length
     )
 
+    def pad_audio(input: np.ndarray, len = audio_length * sample_rate):
+        repeat_times= (len // input.shape[0])
+        new_array = input.copy()
+        for i in range(repeat_times):
+            new_array = np.concatenate((new_array, new_array), axis=0)
+        return new_array[:len]
+
+    if waveform.shape[0] < audio_length * sample_rate:
+        waveform = pad_audio(waveform)
+
     waveform = waveform[None, :]  # (1, audio_length)
     waveform = move_data_to_device(waveform, device)
 

@@ -826,9 +826,18 @@ class Cnn10_BCE(nn.Module):
         x = F.dropout(x, p=0.2, training=self.training)
         x = torch.mean(x, dim=3)
 
-        (x1, _) = torch.max(x, dim=2)
-        x2 = torch.mean(x, dim=2)
-        x = x1 + x2
+        # x = torch.mean(x, dim=2)
+
+        # (x1, _) = torch.max(x, dim=2)
+        # x2 = torch.mean(x, dim=2)
+        # x = x1 + x2
+        #
+
+        x = torch.flatten(x, start_dim=1)
+
+        if x.shape[1] != 128 * 8:  # 128: channel, 15: time, 2: mel_bins
+            raise Exception(f"Wrong input shape, got {x.shape}, input shape: {input.shape}")
+
         x = F.dropout(x, p=0.5, training=self.training)
         x = F.relu_(self.fc1(x))
         embedding = F.dropout(x, p=0.5, training=self.training)
