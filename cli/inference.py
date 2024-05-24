@@ -50,7 +50,6 @@ def get_infer_session(
     checkpoint_path,
     model_type,
     classes_num,
-    label_names,
     quantize=False,
     sample_rate=16000,
     window_size=512,
@@ -349,7 +348,6 @@ if __name__ == "__main__":
         args.checkpoint_path,
         args.model_type,
         args.classes_num,
-        label_names,
         quantize=args.quantize,
     )
 
